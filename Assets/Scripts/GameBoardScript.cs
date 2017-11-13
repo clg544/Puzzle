@@ -1,24 +1,34 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class GameBoardScript : MonoBehaviour
 {
     public GameObject Tile;
     public GameObject TileEater;
     public bool killSem;
-
-    public LinkedList<TileScript> SpawnAreaTiles;       // Sorted by TileID  int:yyyyxxxx
-    public SortedList<int, TileScript> FallingTiles;       // Sorted by TileID  int:yyyyxxxx
+    
+    public SortedList<int, TileScript> FallingTiles;        // Sorted by TileID  int:yyyyxxxx
     public SortedList<int, TileScript> ActiveTiles;
     public LinkedList<TileScript> TempTiles;
-    public SortedList<int, TileScript> KillTiles;
+    public SortedList<int, TileScript> KillTiles;           // Sorted by -TileID, aka top-to-bottom
 
     public float tileDropRate;          // In Seconds
     public float fastDropRate;
     public float tileSpawnRate = 0;     // In Seconds
     public float dropTime;
     public float spawnTime;
+
+    public Slider popSlider;
+
+    public float cooldownMax;
+    public float popCooldown;
+    /*
+    public float redCooldown;
+    public float greenCooldown;
+    public float blueCooldown;
+    */
 
     public float bentChance;
 
@@ -31,7 +41,7 @@ public class GameBoardScript : MonoBehaviour
     public TileScript[,] BoardTileScripts;
     public TileEaterScript[] TileEaterScripts;
     public TileScript[,] SpawnArea;
-    
+
     private void UpdateListsFromTemp()
     {
         /* Update the CurrentTile Lists */
@@ -39,7 +49,8 @@ public class GameBoardScript : MonoBehaviour
         ActiveTiles.Clear();
         foreach (TileScript curTile in TempTiles)
         {
-            FallingTiles.Add(curTile.tileID, curTile);
+            if (!curTile.isGrounded)
+                FallingTiles.Add(curTile.tileID, curTile);
 
             if (curTile.isActive)
                 ActiveTiles.Add(curTile.tileID, curTile);
@@ -148,9 +159,7 @@ public class GameBoardScript : MonoBehaviour
                 TempTiles.AddFirst(tile);
             }
         }
-        FallingTiles.Clear();
-
-
+        
         /* Update the Current Tile Lists */
         UpdateListsFromTemp();
     }
@@ -350,97 +359,126 @@ public class GameBoardScript : MonoBehaviour
             if (tile.Value.isActive)
                 debug += tile.Value.tileID + ":";
         }
-        Debug.Log(debug);
+
+
+        print(StackTraceUtility.ExtractStackTrace());
+        Debug.Log(StackTraceUtility.ExtractStackTrace() + "\n" + debug);
     }
 
 
+
+    public void ApplyGravity(TileScript tile)
+    {
+
+        if (tile.curState == TileScript.TileState.EMPTY)
+        {
+            print("Empty return.");
+            return;
+        }
+        if (FallingTiles.ContainsKey(tile.tileID))
+        {
+            print("FallingTile Return");
+            return;
+        }
+
+        FallingTiles.Add(tile.tileID, tile);
+        tile.isGrounded = false;
+        ApplyGravity(tile.TileAbove);
+    }
+
     public void PopTiles(TileScript.TileState hitState)
     {
-        if (killSem == true)
+        if (popCooldown < cooldownMax)
             return;
         else
-            killSem = true;
+            popCooldown = 0;
 
         LinkedList<TileScript> TilesToCheck = new LinkedList<TileScript>();
 
+        /* For all tiles at (x, 0) */
         for(int i = 0; i < boardWidth; i++)
         {
-            if(BoardTileScripts[i, 0].curState == hitState &&BoardTileScripts[i, 0].isGrounded)
+            /* if the color matches, and is grounded, add it to the kill list */
+            if(BoardTileScripts[i, 0].curState == hitState && BoardTileScripts[i, 0].isGrounded)
             {
+                // Mark for death...
                 BoardTileScripts[i, 0].killFlag = true;
                 KillTiles.Add(-BoardTileScripts[i, 0].tileID, BoardTileScripts[i, 0]);
+
+                // Commit neighbors to be checked
                 TilesToCheck.AddFirst(BoardTileScripts[i, 0]);
             }
         }
 
         /* Find all connected nodes to hitState nodes at (x, 0) */
         LinkedListNode<TileScript> curNode = TilesToCheck.First;
+        TileScript immigrant;
         while(curNode != null)
         {
-            if(curNode.Value.TileLeft != null)
+
+            immigrant = curNode.Value.TileLeft;
+            // Check each neighbor
+            if (immigrant != null)
             {
-                if (!(curNode.Value.TileLeft.killFlag) && curNode.Value.TileLeft.curState == hitState && !ActiveTiles.ContainsKey(curNode.Value.TileLeft.tileID))
+                // If not already checked, matches the colour, and is not one of the player tiles
+                if (!(immigrant.killFlag) && immigrant.curState == hitState 
+                    && !ActiveTiles.ContainsKey(immigrant.tileID) && immigrant.isGrounded)
                 {
-                    curNode.Value.TileLeft.killFlag = true;
-                    KillTiles.Add(-curNode.Value.TileLeft.tileID, curNode.Value.TileLeft);
-                    TilesToCheck.AddLast(curNode.Value.TileLeft);
+                    immigrant.killFlag = true;
+                    KillTiles.Add(-immigrant.tileID, immigrant);
+                    TilesToCheck.AddLast(immigrant);
                 }
             }
-            if (curNode.Value.TileAbove != null)
+
+            immigrant = curNode.Value.TileBelow;
+            // Check each neighbor
+            if (immigrant != null)
             {
-                if (!(curNode.Value.TileAbove.killFlag) && curNode.Value.TileAbove.curState == hitState && !ActiveTiles.ContainsKey(curNode.Value.TileLeft.tileID))
+                // If not already checked, matches the colour, and is not one of the player tiles
+                if (!(immigrant.killFlag) && immigrant.curState == hitState
+                    && !ActiveTiles.ContainsKey(immigrant.tileID) && immigrant.isGrounded)
                 {
-                    curNode.Value.TileAbove.killFlag = true;
-                    KillTiles.Add(-curNode.Value.TileAbove.tileID, curNode.Value.TileAbove);
-                    TilesToCheck.AddLast(curNode.Value.TileAbove);
+                    immigrant.killFlag = true;
+                    KillTiles.Add(-immigrant.tileID, immigrant);
+                    TilesToCheck.AddLast(immigrant);
                 }
             }
-            if (curNode.Value.TileRight != null)
+
+            immigrant = curNode.Value.TileRight;
+            // Check each neighbor
+            if (immigrant != null)
             {
-                if (!(curNode.Value.TileRight.killFlag) && curNode.Value.TileRight.curState == hitState && !ActiveTiles.ContainsKey(curNode.Value.TileLeft.tileID))
+                // If not already checked, matches the colour, and is not one of the player tiles
+                if (!(immigrant.killFlag) && immigrant.curState == hitState
+                    && !ActiveTiles.ContainsKey(immigrant.tileID) && immigrant.isGrounded)
                 {
-                    curNode.Value.TileRight.killFlag = true;
-                    KillTiles.Add(-curNode.Value.TileRight.tileID, curNode.Value.TileRight);
-                    TilesToCheck.AddLast(curNode.Value.TileRight);
+                    immigrant.killFlag = true;
+                    KillTiles.Add(-immigrant.tileID, immigrant);
+                    TilesToCheck.AddLast(immigrant);
                 }
             }
-            if (curNode.Value.TileBelow != null)
+
+            immigrant = curNode.Value.TileAbove;
+            // Check each neighbor
+            if (immigrant != null)
             {
-                if (!(curNode.Value.TileBelow.killFlag) && curNode.Value.TileBelow.curState == hitState && !ActiveTiles.ContainsKey(curNode.Value.TileLeft.tileID))
+                // If not already checked, matches the colour, and is not one of the player tiles
+                if (!(immigrant.killFlag) && immigrant.curState == hitState
+                    && !ActiveTiles.ContainsKey(immigrant.tileID) && immigrant.isGrounded)
                 {
-                    curNode.Value.TileBelow.killFlag = true;
-                    KillTiles.Add(-curNode.Value.TileBelow.tileID, curNode.Value.TileBelow);
-                    TilesToCheck.AddLast(curNode.Value.TileBelow);
+                    immigrant.killFlag = true;
+                    KillTiles.Add(-immigrant.tileID, immigrant);
+                    TilesToCheck.AddLast(immigrant);
                 }
             }
 
             curNode = curNode.Next;
         }
-
-        TileScript curTile;
         foreach(TileScript tile in KillTiles.Values)
         {
             tile.Reset();
-
-            curTile = tile.TileAbove;
-            while (!(curTile.curState == TileScript.TileState.EMPTY))
-            {
-                print(tile.tileID);
-
-                if (!FallingTiles.ContainsKey(curTile.tileID))
-                    FallingTiles.Add(curTile.tileID, curTile);
-
-                if (ActiveTiles.ContainsKey(curTile.tileID))
-                {
-                    print("Bug?");
-                    Debug.Break();
-                }
-                curTile.isGrounded = false;
-                curTile = curTile.TileAbove;
-            }
-            tile.Reset();
         }
-
+        
         for (int i = 0; i < boardWidth; i++)
         {
             if (TileEaterScripts[i].curState == hitState)
@@ -448,11 +486,41 @@ public class GameBoardScript : MonoBehaviour
                 TileEaterScripts[i].Reset();
             }
         }
+        foreach (TileScript tile in BoardTileScripts)
+        {
+            if (tile.isActive)
+            {
+                //print("is active:" + tile.tileID);
+            }
+            else if (FallingTiles.ContainsKey(tile.tileID))
+            {
+                //print("in Fallingtiles:" + tile.tileID);
+            }
+            else if (tile.curState == TileScript.TileState.EMPTY)
+            {
+                //print("Curstate is empty:" + tile.tileID);
+            }
+            else if (tile.TileBelow != null)
+            {
+                if (!tile.TileBelow.isGrounded)
+                {
+                    //print("falling.add:" + tile.tileID);
+                    FallingTiles.Add(tile.tileID, tile);
+                }
+                else
+                {
+                    print("IsGrounded runoff");
+                }
+            }
+            else
+            {
+                print("Poptile runoff");
+            }
+        }
+        //ListDebug();
 
         TilesToCheck.Clear();
         KillTiles.Clear();
-
-        killSem = false;
     }
 
     public void GroundTile(TileScript ts)
@@ -468,11 +536,7 @@ public class GameBoardScript : MonoBehaviour
     }
     public void DropAllTiles()
     {
-        if (FallingTiles.Count == 0)
-            return;
-
         dropTime = 0;
-
         // Set all the new tiles
         foreach (TileScript curTile in FallingTiles.Values)
         {
@@ -481,12 +545,12 @@ public class GameBoardScript : MonoBehaviour
             {
                 break;
             }
-            else if (curTile.y_coor == 0 || curTile.TileBelow.isGrounded)
+            if (curTile.y_coor == 0 || curTile.TileBelow.isGrounded)
             {
                 GroundTile(curTile);              // Ground the tile,
             }
             // Else, If we're above an empty space...
-            else if(curTile.TileBelow.curState == TileScript.TileState.EMPTY)
+            else if(curTile.TileBelow.curState == TileScript.TileState.EMPTY && curTile.curState != TileScript.TileState.EMPTY)
             {
                 curTile.TileBelow.setState(curTile.curState);       // Move this tile's state down one
                 curTile.setState(TileScript.TileState.EMPTY);       // Set this state to empty
@@ -505,6 +569,11 @@ public class GameBoardScript : MonoBehaviour
                 }
                 
                 TempTiles.AddFirst(curTile.TileBelow);               // Add new tile to Temp list, to add to falling
+
+                if (curTile.y_coor == 0 || curTile.TileBelow.isGrounded)
+                {
+                    GroundTile(curTile);              // Ground the tile,
+                }
             }
         }
 
@@ -523,7 +592,7 @@ public class GameBoardScript : MonoBehaviour
     }
     public void SpawnTromino()
     {
-        foreach(TileScript ts in SpawnAreaTiles)
+        foreach(TileScript ts in SpawnArea)
         {
             if(ts.curState != TileScript.TileState.EMPTY)
             {
@@ -575,7 +644,6 @@ public class GameBoardScript : MonoBehaviour
         FallingTiles = new SortedList<int, TileScript>();
         ActiveTiles = new SortedList<int, TileScript>();
         TempTiles = new LinkedList<TileScript>();
-        SpawnAreaTiles = new LinkedList<TileScript>();
         KillTiles = new SortedList<int, TileScript>();
 
         GameObject curObject;
@@ -612,8 +680,6 @@ public class GameBoardScript : MonoBehaviour
             SpawnArea[x, y] = Instantiate(Tile, new Vector3(tileWidth * ((boardWidth/2) + (x - 1)), tileWidth * (boardHeight + y),0),
                 Quaternion.identity, gameObject.transform).GetComponent<TileScript>();
             
-            SpawnAreaTiles.AddLast(SpawnArea[x, y]);
-
             SpawnArea[x, y].x_coor = x;
             SpawnArea[x, y].y_coor = y;
         }
@@ -628,7 +694,7 @@ public class GameBoardScript : MonoBehaviour
         SpawnArea[2, 0].y_coor = boardHeight + 0;
         SpawnArea[1, 1].y_coor = boardHeight + 1;
 
-        foreach (TileScript tile in SpawnAreaTiles)
+        foreach (TileScript tile in SpawnArea)
         {
             tile.TileManager = this;
             tile.GenerateTileID();
@@ -689,10 +755,18 @@ public class GameBoardScript : MonoBehaviour
         SpawnArea[1, 0].TileRight = SpawnArea[2, 0];
         SpawnArea[2, 0].TileLeft = SpawnArea[1, 0];
 
+        
 
     }
-	void Update ()
+    
+    void Update()
     {
+        if (popCooldown < cooldownMax)
+        {
+            popCooldown += Time.deltaTime;
+            popSlider.value = popCooldown / cooldownMax;
+        }
+
         // periodically fall
         if (dropTime > tileDropRate)
         {
@@ -709,6 +783,5 @@ public class GameBoardScript : MonoBehaviour
         {
             dropTime += Time.deltaTime;
         }
-
     }
 }

@@ -47,8 +47,12 @@ public class TileScript : MonoBehaviour {
         isGrounded = false;
         killFlag = false;
 
-        if (TileAbove != null)
-            TileAbove.isGrounded = false;
+        TileScript curTile = TileAbove;
+        while (curTile != null)
+        {
+            curTile.isGrounded = false;
+            curTile = curTile.TileAbove;
+        }
 
         this.setState(TileState.EMPTY);
     }

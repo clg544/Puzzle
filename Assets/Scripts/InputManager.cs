@@ -80,21 +80,37 @@ public class InputManager : MonoBehaviour
         }
         if (Input.GetKey(KeyCode.Space))
         {
+            if (myGameBoard.FallingTiles.Count == 0)
+                return;
+
             if (myGameBoard.dropTime > myGameBoard.fastDropRate)
                 myGameBoard.DropAllTiles();
         }
-        if (Input.GetKeyDown(KeyCode.Keypad1))
+        if (Input.GetKey(KeyCode.Keypad1))
         {
             myGameBoard.PopTiles(TileScript.TileState.RED);
+            return;
         }
-        if (Input.GetKeyDown(KeyCode.Keypad2))
+        if (Input.GetKey(KeyCode.Keypad2))
         {
             myGameBoard.PopTiles(TileScript.TileState.BLUE);
+            return;
         }
-        if (Input.GetKeyDown(KeyCode.Keypad3))
+        if (Input.GetKey(KeyCode.Keypad3))
         {
             myGameBoard.PopTiles(TileScript.TileState.GREEN);
+            return;
         }
+        if (Input.GetKey(KeyCode.Keypad4))
+        {
+            myGameBoard.PopTiles(TileScript.TileState.YELLOW);
+            return;
+        }
+        if (Input.GetKeyDown(KeyCode.P))
+        {
+            Debug.Break();
+        }
+
     }
     
     public void JoypadInput()
