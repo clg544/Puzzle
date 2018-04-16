@@ -5,41 +5,42 @@ using UnityEngine.UI;
 
 public class GameBoardScript : MonoBehaviour
 {
+    public Character myCharacter;
+
+    // Instantiable Game Objects
     public GameObject Tile;
     public GameObject TileEater;
-    public bool killSem;
-    
+
+    // Organizing Lists
+    public List<TileScript> AllTiles;
     public SortedList<int, TileScript> FallingTiles;        // Sorted by TileID  int:yyyyxxxx
     public SortedList<int, TileScript> ActiveTiles;
     public LinkedList<TileScript> TempTiles;
     public SortedList<int, TileScript> KillTiles;           // Sorted by -TileID, aka top-to-bottom
-
-    public float tileDropRate;          // In Seconds
-    public float fastDropRate;
+    
     public float tileSpawnRate = 0;     // In Seconds
-    public float dropTime;
     public float spawnTime;
 
-    public Slider popSlider;
-
+    // cooldown for cashing tile matches
     public float cooldownMax;
     public float popCooldown;
-    /*
-    public float redCooldown;
-    public float greenCooldown;
-    public float blueCooldown;
-    */
-
+    
+    // How likely a tile is to be an L-piece
     public float bentChance;
 
+    // Board Dimensions
     public int boardWidth = 0;
     public int boardHeight = 0;
     
+    // Tile size
     public float tileWidth;       // Assume tiles are square
 
+    // starting position
+    public float anchorX;
+    public float anchorY;
+    
     public TileScript entryPoint;
     public TileScript[,] BoardTileScripts;
-    public TileEaterScript[] TileEaterScripts;
     public TileScript[,] SpawnArea;
 
     private void UpdateListsFromTemp()
@@ -47,16 +48,22 @@ public class GameBoardScript : MonoBehaviour
         /* Update the CurrentTile Lists */
         FallingTiles.Clear();
         ActiveTiles.Clear();
+
+        // Remake both lists from our Temp Values
         foreach (TileScript curTile in TempTiles)
         {
             if (!curTile.isGrounded)
+            {
                 FallingTiles.Add(curTile.tileID, curTile);
-
+                curTile.RemoveAdjacencies();
+            }
             if (curTile.isActive)
                 ActiveTiles.Add(curTile.tileID, curTile);
         }
         TempTiles.Clear();    // Clean up after ourselves!
     }
+
+    // Move a tile from one position to another
     public void Relocate(TileScript from, TileScript to)
     {
         to.isActive = from.isActive;
@@ -77,6 +84,15 @@ public class GameBoardScript : MonoBehaviour
         from.Reset();
     }
 
+    /* Place the bottom left corner of the board */
+    public void MoveGameBoard(Vector3 newPos)
+    {
+        gameObject.transform.position = newPos;
+
+        // adjust for tile-eaters
+        gameObject.transform.position += new Vector3(0, tileWidth, 0);
+
+    }
     public void MoveLeft()
     {
         TileScript tile;
@@ -111,12 +127,12 @@ public class GameBoardScript : MonoBehaviour
     }
     public void ShoveTilesLeft(TileScript tileToMove)
     {
-        if (tileToMove.TileLeft.curState != TileScript.TileState.EMPTY)
+        if (tileToMove.TileLeft.curState != TileState.EMPTY)
             ShoveTilesLeft(tileToMove.TileLeft);
-        // Else we were lied to by CanMoveLeft.;
+        // Else we were lied to by CanMoveLeft
 
         tileToMove.TileLeft.setState(tileToMove.curState);
-        tileToMove.setState(TileScript.TileState.EMPTY);
+        tileToMove.setState(TileState.EMPTY);
 
         if (tileToMove.isActive)
         {
@@ -165,12 +181,12 @@ public class GameBoardScript : MonoBehaviour
     }
     public void ShoveTilesRight(TileScript tileToMove)
     {
-        if (tileToMove.TileRight.curState != TileScript.TileState.EMPTY)
+        if (tileToMove.TileRight.curState != TileState.EMPTY)
             ShoveTilesRight(tileToMove.TileRight);
         // Else we were lied to by CanMoveRight.
 
         tileToMove.TileRight.setState(tileToMove.curState);
-        tileToMove.setState(TileScript.TileState.EMPTY);
+        tileToMove.setState(TileState.EMPTY);
 
         if (tileToMove.isActive)
         {
@@ -203,6 +219,9 @@ public class GameBoardScript : MonoBehaviour
                 break;
             }
         }
+
+        if (pivot == null)
+            return;
         
         // Descripe object shape in binary 
         foreach(TileScript tile in ActiveTiles.Values)
@@ -233,7 +252,7 @@ public class GameBoardScript : MonoBehaviour
                 if(pivot.TileRight == null)
                     return;
 
-                if(pivot.TileRight.curState == TileScript.TileState.EMPTY)
+                if(pivot.TileRight.curState == TileState.EMPTY)
                 {
                     Relocate(pivot.TileAbove, pivot.TileRight);
                 }
@@ -243,7 +262,7 @@ public class GameBoardScript : MonoBehaviour
                 if (pivot.TileBelow == null)
                     return;
 
-                if (pivot.TileBelow.curState == TileScript.TileState.EMPTY)
+                if (pivot.TileBelow.curState == TileState.EMPTY)
                 {
                     Relocate(pivot.TileRight, pivot.TileBelow);
                 }
@@ -253,7 +272,7 @@ public class GameBoardScript : MonoBehaviour
                 if (pivot.TileLeft == null)
                     return;
 
-                if (pivot.TileLeft.curState == TileScript.TileState.EMPTY)
+                if (pivot.TileLeft.curState == TileState.EMPTY)
                 {
                     Relocate(pivot.TileBelow, pivot.TileLeft);
                 }
@@ -263,7 +282,7 @@ public class GameBoardScript : MonoBehaviour
                 if (pivot.TileAbove == null)
                     return;
 
-                if (pivot.TileAbove.curState == TileScript.TileState.EMPTY)
+                if (pivot.TileAbove.curState == TileState.EMPTY)
                 {
                     Relocate(pivot.TileLeft, pivot.TileAbove);
                 }
@@ -273,7 +292,7 @@ public class GameBoardScript : MonoBehaviour
                 if (pivot.TileAbove.TileRight == null)
                     return;
 
-                if (pivot.TileAbove.TileRight.curState == TileScript.TileState.EMPTY)
+                if (pivot.TileAbove.TileRight.curState == TileState.EMPTY)
                 {
                     Relocate(pivot.TileAbove, pivot.TileAbove.TileRight);
                     Relocate(pivot, pivot.TileAbove);
@@ -285,7 +304,7 @@ public class GameBoardScript : MonoBehaviour
                 if (pivot.TileRight.TileBelow == null)
                     return;
 
-                if (pivot.TileRight.TileBelow.curState == TileScript.TileState.EMPTY)
+                if (pivot.TileRight.TileBelow.curState == TileState.EMPTY)
                 {
                     Relocate(pivot.TileRight, pivot.TileRight.TileBelow);
                     Relocate(pivot, pivot.TileRight);
@@ -297,7 +316,7 @@ public class GameBoardScript : MonoBehaviour
                 if (pivot.TileBelow.TileLeft == null)
                     return;
 
-                if (pivot.TileBelow.TileLeft.curState == TileScript.TileState.EMPTY)
+                if (pivot.TileBelow.TileLeft.curState == TileState.EMPTY)
                 {
                     Relocate(pivot.TileBelow, pivot.TileBelow.TileLeft);
                     Relocate(pivot, pivot.TileBelow);
@@ -309,7 +328,7 @@ public class GameBoardScript : MonoBehaviour
                 if (pivot.TileAbove.TileLeft == null)
                     return;
 
-                if (pivot.TileAbove.TileLeft.curState == TileScript.TileState.EMPTY)
+                if (pivot.TileAbove.TileLeft.curState == TileState.EMPTY)
                 {
                     Relocate(pivot.TileLeft, pivot.TileAbove.TileLeft);
                     Relocate(pivot, pivot.TileLeft);
@@ -321,7 +340,7 @@ public class GameBoardScript : MonoBehaviour
                 if (pivot.TileAbove == null || pivot.TileBelow == null)
                     return;
 
-                if (pivot.TileAbove.curState == TileScript.TileState.EMPTY && pivot.TileBelow.curState == TileScript.TileState.EMPTY)
+                if (pivot.TileAbove.curState == TileState.EMPTY && pivot.TileBelow.curState == TileState.EMPTY)
                 {
                     Relocate(pivot.TileLeft, pivot.TileAbove);
                     Relocate(pivot.TileRight, pivot.TileBelow);
@@ -332,7 +351,7 @@ public class GameBoardScript : MonoBehaviour
                 if (pivot.TileLeft == null || pivot.TileRight == null)
                     return;
 
-                if (pivot.TileLeft.curState == TileScript.TileState.EMPTY && pivot.TileRight.curState == TileScript.TileState.EMPTY)
+                if (pivot.TileLeft.curState == TileState.EMPTY && pivot.TileRight.curState == TileState.EMPTY)
                 {
                     Relocate(pivot.TileAbove, pivot.TileRight);
                     Relocate(pivot.TileBelow, pivot.TileLeft);
@@ -365,28 +384,61 @@ public class GameBoardScript : MonoBehaviour
         Debug.Log(StackTraceUtility.ExtractStackTrace() + "\n" + debug);
     }
 
-
-
-    public void ApplyGravity(TileScript tile)
+    public int MatchFlagValue(int tileMatchFlag)
     {
+        // Bad Value
+        if (tileMatchFlag > 15)
+            return 0;
 
-        if (tile.curState == TileScript.TileState.EMPTY)
+        switch (tileMatchFlag)
         {
-            print("Empty return.");
-            return;
-        }
-        if (FallingTiles.ContainsKey(tile.tileID))
-        {
-            print("FallingTile Return");
-            return;
+            // Single Connection
+            case 0:     // 0000
+            case 1:     // 0001
+            case 2:     // 0010
+            case 4:     // 0100
+            case 8:     // 1000
+                return 1;
+
+            // Two Connections
+            case 3:     // 0011
+            case 5:     // 0101
+            case 6:     // 0110
+            case 9:     // 1001
+            case 10:    // 1010
+            case 12:    // 1100
+                return 2;
+
+            // Three Connections
+            case 7:     // 0111
+            case 11:    // 1011
+            case 13:    // 1101
+            case 14:    // 1110
+                return 4;
+
+            // Four Connections
+            case 15:    // 1111
+                return 8;
         }
 
-        FallingTiles.Add(tile.tileID, tile);
-        tile.isGrounded = false;
-        ApplyGravity(tile.TileAbove);
+        return 0;
     }
 
-    public void PopTiles(TileScript.TileState hitState)
+    public int ScoreList(IList<TileScript> tileList)
+    {
+        int score = 0;
+
+        foreach(TileScript tile in tileList)
+        {
+            score += MatchFlagValue(tile.matchFlag);
+
+            tile.Reset();
+        }
+        
+        return score;
+    }
+
+    public void PopTiles(TileState hitState)
     {
         if (popCooldown < cooldownMax)
             return;
@@ -396,10 +448,10 @@ public class GameBoardScript : MonoBehaviour
         LinkedList<TileScript> TilesToCheck = new LinkedList<TileScript>();
 
         /* For all tiles at (x, 0) */
-        for(int i = 0; i < boardWidth; i++)
+        for (int i = 0; i < boardWidth; i++)
         {
             /* if the color matches, and is grounded, add it to the kill list */
-            if(BoardTileScripts[i, 0].curState == hitState && BoardTileScripts[i, 0].isGrounded)
+            if (BoardTileScripts[i, 0].curState == hitState && BoardTileScripts[i, 0].isGrounded)
             {
                 // Mark for death...
                 BoardTileScripts[i, 0].killFlag = true;
@@ -413,79 +465,63 @@ public class GameBoardScript : MonoBehaviour
         /* Find all connected nodes to hitState nodes at (x, 0) */
         LinkedListNode<TileScript> curNode = TilesToCheck.First;
         TileScript immigrant;
-        while(curNode != null)
+        while (curNode != null)
         {
+            immigrant = null;
 
-            immigrant = curNode.Value.TileLeft;
-            // Check each neighbor
-            if (immigrant != null)
+            // For each side adjacent to the tile
+            for (int i = 0; i < 4; i++)
             {
-                // If not already checked, matches the colour, and is not one of the player tiles
-                if (!(immigrant.killFlag) && immigrant.curState == hitState 
-                    && !ActiveTiles.ContainsKey(immigrant.tileID) && immigrant.isGrounded)
+                switch (i)
                 {
-                    immigrant.killFlag = true;
-                    KillTiles.Add(-immigrant.tileID, immigrant);
-                    TilesToCheck.AddLast(immigrant);
+                    case 0:
+                        immigrant = curNode.Value.TileLeft;
+                        break;
+
+                    case 1:
+                        immigrant = curNode.Value.TileBelow;
+                        break;
+
+                    case 2:
+                        immigrant = curNode.Value.TileRight;
+                        break;
+
+                    case 3:
+                        immigrant = curNode.Value.TileAbove;
+                        break;
                 }
-            }
 
-            immigrant = curNode.Value.TileBelow;
-            // Check each neighbor
-            if (immigrant != null)
-            {
-                // If not already checked, matches the colour, and is not one of the player tiles
-                if (!(immigrant.killFlag) && immigrant.curState == hitState
-                    && !ActiveTiles.ContainsKey(immigrant.tileID) && immigrant.isGrounded)
+                // Check each neighbor
+                if (immigrant != null)
                 {
-                    immigrant.killFlag = true;
-                    KillTiles.Add(-immigrant.tileID, immigrant);
-                    TilesToCheck.AddLast(immigrant);
-                }
-            }
-
-            immigrant = curNode.Value.TileRight;
-            // Check each neighbor
-            if (immigrant != null)
-            {
-                // If not already checked, matches the colour, and is not one of the player tiles
-                if (!(immigrant.killFlag) && immigrant.curState == hitState
-                    && !ActiveTiles.ContainsKey(immigrant.tileID) && immigrant.isGrounded)
-                {
-                    immigrant.killFlag = true;
-                    KillTiles.Add(-immigrant.tileID, immigrant);
-                    TilesToCheck.AddLast(immigrant);
-                }
-            }
-
-            immigrant = curNode.Value.TileAbove;
-            // Check each neighbor
-            if (immigrant != null)
-            {
-                // If not already checked, matches the colour, and is not one of the player tiles
-                if (!(immigrant.killFlag) && immigrant.curState == hitState
-                    && !ActiveTiles.ContainsKey(immigrant.tileID) && immigrant.isGrounded)
-                {
-                    immigrant.killFlag = true;
-                    KillTiles.Add(-immigrant.tileID, immigrant);
-                    TilesToCheck.AddLast(immigrant);
+                    // If not already checked, matches the colour, and is not one of the player tiles
+                    if (!(immigrant.killFlag) && immigrant.curState == hitState
+                        && !ActiveTiles.ContainsKey(immigrant.tileID) && immigrant.isGrounded)
+                    {
+                        immigrant.killFlag = true;
+                        KillTiles.Add(-immigrant.tileID, immigrant);
+                        TilesToCheck.AddLast(immigrant);
+                    }
                 }
             }
 
             curNode = curNode.Next;
         }
-        foreach(TileScript tile in KillTiles.Values)
+
+        // Add the score to the right counter
+        switch (hitState)
         {
-            tile.Reset();
+            case TileState.RED:
+                myCharacter.redCount += ScoreList(KillTiles.Values);
+                break;
+            case TileState.GREEN:
+                myCharacter.greenCount += ScoreList(KillTiles.Values);
+                break;
+            case TileState.BLUE:
+                myCharacter.blueCount += ScoreList(KillTiles.Values);
+                break;
         }
-        
-        for (int i = 0; i < boardWidth; i++)
-        {
-            if (TileEaterScripts[i].curState == hitState)
-            {
-                TileEaterScripts[i].Reset();
-            }
-        }
+
         foreach (TileScript tile in BoardTileScripts)
         {
             if (tile.isActive)
@@ -496,7 +532,7 @@ public class GameBoardScript : MonoBehaviour
             {
                 //print("in Fallingtiles:" + tile.tileID);
             }
-            else if (tile.curState == TileScript.TileState.EMPTY)
+            else if (tile.curState == TileState.EMPTY)
             {
                 //print("Curstate is empty:" + tile.tileID);
             }
@@ -506,21 +542,29 @@ public class GameBoardScript : MonoBehaviour
                 {
                     //print("falling.add:" + tile.tileID);
                     FallingTiles.Add(tile.tileID, tile);
+
+                    tile.RemoveAdjacencies();
+                    tile.UpdateSprite();
                 }
-                else
-                {
-                    print("IsGrounded runoff");
-                }
-            }
-            else
-            {
-                print("Poptile runoff");
             }
         }
-        //ListDebug();
 
         TilesToCheck.Clear();
         KillTiles.Clear();
+    }
+
+
+    public void MakeNewFallingTiles()
+    {
+        FallingTiles.Clear();
+
+        foreach(TileScript t in AllTiles)
+        {
+            if(t.curState != TileState.EMPTY && !t.isGrounded)
+            {
+                FallingTiles.Add(t.tileID, t);
+            }
+        }
     }
 
     public void GroundTile(TileScript ts)
@@ -528,20 +572,21 @@ public class GameBoardScript : MonoBehaviour
         ts.isActive = false;
         ts.isPivot = false;
         ts.isGrounded = true;
-
-        if (ts.y_coor == 0)
-        {
-            TileEaterScripts[ts.x_coor].setState(ts.curState);
-        }
+        ts.SetAdjacencies();
     }
     public void DropAllTiles()
     {
-        dropTime = 0;
+        if (FallingTiles == null)
+            return;
+
+        if (FallingTiles.Count == 0)
+            return;
+        
         // Set all the new tiles
         foreach (TileScript curTile in FallingTiles.Values)
         {
             // If we're at ground...
-            if(curTile.curState == TileScript.TileState.EMPTY)
+            if(curTile.curState == TileState.EMPTY)
             {
                 break;
             }
@@ -550,13 +595,13 @@ public class GameBoardScript : MonoBehaviour
                 GroundTile(curTile);              // Ground the tile,
             }
             // Else, If we're above an empty space...
-            else if(curTile.TileBelow.curState == TileScript.TileState.EMPTY && curTile.curState != TileScript.TileState.EMPTY)
+            else if(curTile.TileBelow.curState == TileState.EMPTY && curTile.curState != TileState.EMPTY)
             {
                 curTile.TileBelow.setState(curTile.curState);       // Move this tile's state down one
-                curTile.setState(TileScript.TileState.EMPTY);       // Set this state to empty
+                curTile.setState(TileState.EMPTY);       // Set this state to empty
 
                 curTile.TileBelow.isActive = curTile.isActive;      // Carry Tile Active level down
-                curTile.TileBelow.isPivot = curTile.isPivot;// Carry Tile Active level down
+                curTile.TileBelow.isPivot = curTile.isPivot;        // Carry Tile Active level down
                 curTile.isPivot = false;
 
                 if (curTile.TileAbove != null)
@@ -582,9 +627,9 @@ public class GameBoardScript : MonoBehaviour
     }
 
     public void SpawnTile(TileScript newTile) {
-        if (newTile.curState == TileScript.TileState.EMPTY)
+        if (newTile.curState == TileState.EMPTY)
         {
-            newTile.setState((TileScript.TileState)Random.Range(0, 3));
+            newTile.setState((TileState)Random.Range(0, 3));
             newTile.isActive = true;
 
             FallingTiles.Add(newTile.tileID, newTile);
@@ -594,7 +639,7 @@ public class GameBoardScript : MonoBehaviour
     {
         foreach(TileScript ts in SpawnArea)
         {
-            if(ts.curState != TileScript.TileState.EMPTY)
+            if(ts.curState != TileState.EMPTY)
             {
                 // this.Loser();
                 print("Player loses: not yet implemented");
@@ -649,7 +694,6 @@ public class GameBoardScript : MonoBehaviour
         GameObject curObject;
 
         BoardTileScripts = new TileScript[boardWidth, boardHeight];
-        TileEaterScripts = new TileEaterScript[boardWidth];
         
         for (int i = 0; i < boardWidth; i++)
         {
@@ -704,9 +748,7 @@ public class GameBoardScript : MonoBehaviour
         for (int i = 0; i < boardWidth; i++)
         {
             curObject = Instantiate(TileEater, new Vector3(tileWidth * i, 0), Quaternion.identity, gameObject.transform);
-
-            TileEaterScripts[i] = curObject.GetComponent<TileEaterScript>();
-
+            
             curObject.transform.localScale *= tileWidth;
         }
     }
@@ -720,6 +762,7 @@ public class GameBoardScript : MonoBehaviour
             for (int j = 0; j < boardHeight; j++)
             {
                 curTile = BoardTileScripts[i, j];
+                AllTiles.Add(curTile);
 
                 if (j != 0)
                 {
@@ -755,33 +798,20 @@ public class GameBoardScript : MonoBehaviour
         SpawnArea[1, 0].TileRight = SpawnArea[2, 0];
         SpawnArea[2, 0].TileLeft = SpawnArea[1, 0];
 
-        
+        MoveGameBoard(new Vector3(anchorX, anchorY, 0));
 
     }
     
     void Update()
     {
-        if (popCooldown < cooldownMax)
+        if (FallingTiles.Count == 0)
         {
-            popCooldown += Time.deltaTime;
-            popSlider.value = popCooldown / cooldownMax;
+            this.SpawnTromino();
         }
 
-        // periodically fall
-        if (dropTime > tileDropRate)
+        if(popCooldown < cooldownMax)
         {
-            if (FallingTiles.Count == 0)
-            {
-                SpawnTromino();
-            }
-            else
-            {
-                DropAllTiles();
-            }
-        }
-        else
-        {
-            dropTime += Time.deltaTime;
+            popCooldown += Time.deltaTime;
         }
     }
 }

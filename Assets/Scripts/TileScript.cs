@@ -2,29 +2,31 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum TileState
+{
+    RED,
+    GREEN,
+    BLUE,
+    YELLOW,
+    EMPTY
+}
+
 public class TileScript : MonoBehaviour {
     public GameBoardScript TileManager;
     public TileScript TileBelow;
     public TileScript TileAbove;
     public TileScript TileLeft;
     public TileScript TileRight;
-    
-    public Sprite EmptySprite;
-    public Sprite RedSprite;
-    public Sprite GreenSprite;
-    public Sprite BlueSprite;
-    public Sprite YellowSprite;
+
+    public const int leftMatch  = 0x1;
+    public const int aboveMatch = 0x2;
+    public const int rightMatch = 0x4;
+    public const int belowMatch = 0x8;
+    public int matchFlag;
+        
+    public Sprite[] spriteSheet;
     public SpriteRenderer mySprite;
     
-    public enum TileState
-    {
-        RED,
-        GREEN,
-        BLUE,
-        YELLOW,
-        EMPTY
-    }
-
     // ID info
     public int tileID;
     public int x_coor;
@@ -46,7 +48,9 @@ public class TileScript : MonoBehaviour {
         isPivot = false;
         isGrounded = false;
         killFlag = false;
+        matchFlag = 0;
 
+        // Unground all tiles above here.
         TileScript curTile = TileAbove;
         while (curTile != null)
         {
@@ -54,7 +58,9 @@ public class TileScript : MonoBehaviour {
             curTile = curTile.TileAbove;
         }
 
+        RemoveAdjacencies();
         this.setState(TileState.EMPTY);
+        UpdateSprite();
     }
 
     public void GenerateTileID()
@@ -101,6 +107,122 @@ public class TileScript : MonoBehaviour {
             return TileRight.CanMoveRight();
     }
 
+    public void RemoveAdjacencies()
+    {
+        matchFlag = 0;
+        if(TileLeft != null)
+        {
+            TileLeft.matchFlag = TileLeft.matchFlag & (~rightMatch);
+            TileLeft.UpdateSprite();
+        }
+        if (TileAbove != null)
+        {
+            TileAbove.matchFlag = TileAbove.matchFlag & (~belowMatch);
+            TileAbove.UpdateSprite();
+        }
+        if (TileRight != null)
+        {
+            TileRight.matchFlag = TileRight.matchFlag & (~leftMatch);
+            TileRight.UpdateSprite();
+        }
+        if (TileBelow != null)
+        {
+            TileBelow.matchFlag = TileBelow.matchFlag & (~aboveMatch);
+            TileBelow.UpdateSprite();
+        }
+    }
+    
+    public void setState(TileState newState)
+    {
+        curState = newState;
+        UpdateColor();
+    }
+
+    public void UpdateColor()
+    {
+        switch (curState)
+        {
+            case TileState.RED:
+                mySprite.color = Color.red;
+                break;
+            case TileState.GREEN:
+                mySprite.color = Color.green;
+                break;
+            case TileState.BLUE:
+                mySprite.color = Color.blue;
+                break;
+            case TileState.YELLOW:
+                mySprite.color = Color.yellow;
+                break;
+            case TileState.EMPTY:
+                mySprite.color = Color.white;
+                break;
+        }
+    }
+
+    public void UpdateSprite()
+    {
+        if (curState == TileState.EMPTY)
+            matchFlag = 0;
+
+        mySprite.sprite = spriteSheet[matchFlag];
+    }
+
+    public void SetAdjacencies()
+    {
+        // If empty, reset and return...
+        if(curState == TileState.EMPTY)
+        {
+            matchFlag = 0;  // No Neighbors
+            mySprite.sprite = spriteSheet[matchFlag];
+            return;
+        }
+
+        // else, check for neighbors
+        if (TileLeft != null)
+        {
+            if (curState == TileLeft.curState && TileLeft.isGrounded)
+            {
+                matchFlag = matchFlag | leftMatch;
+                TileLeft.matchFlag = TileLeft.matchFlag | rightMatch;
+                TileLeft.UpdateSprite();
+            }
+
+        }
+
+        if (TileAbove != null)
+        {
+            if (curState == TileAbove.curState && TileAbove.isGrounded)
+            {
+                matchFlag = matchFlag | aboveMatch;
+                TileAbove.matchFlag = TileAbove.matchFlag | belowMatch;
+                TileAbove.UpdateSprite();
+            }
+        }
+
+        if (TileRight != null)
+        {
+            if (curState == TileRight.curState && TileRight.isGrounded)
+            {
+                matchFlag = matchFlag | rightMatch;
+                TileRight.matchFlag = TileRight.matchFlag | leftMatch;
+                TileRight.UpdateSprite();
+            }
+        }
+
+        if (TileBelow != null)
+        {
+            if (curState == TileBelow.curState && TileBelow.isGrounded)
+            {
+                matchFlag = matchFlag | belowMatch;
+                TileBelow.matchFlag = TileBelow.matchFlag | aboveMatch;
+                TileBelow.UpdateSprite();
+            }
+        }
+
+        UpdateSprite();
+    }
+
     // Use this for initialization
     void Start ()
     {
@@ -113,40 +235,5 @@ public class TileScript : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 
-    }
-
-    public void setState(TileState newState)
-    {
-        curState = newState;
-
-        /* Do something on state change */
-        switch (newState)
-        {
-            case TileState.RED:
-                mySprite.sprite = RedSprite;
-                mySprite.color = Color.red;
-
-                break;
-
-            case TileState.GREEN:
-                mySprite.sprite = GreenSprite;
-                mySprite.color = Color.green;
-                break;
-
-            case TileState.BLUE:
-                mySprite.sprite = BlueSprite;
-                mySprite.color = Color.blue;
-                break;
-
-            case TileState.YELLOW:
-                mySprite.sprite = YellowSprite;
-                mySprite.color = Color.yellow;
-                break;
-
-            case TileState.EMPTY:
-                mySprite.sprite = EmptySprite;
-                mySprite.color = Color.white;
-                break;
-        }
     }
 }

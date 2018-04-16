@@ -1,0 +1,216 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &100100000
+Prefab:
+  m_ObjectHideFlags: 1
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 0}
+    m_Modifications: []
+    m_RemovedComponents: []
+  m_ParentPrefab: {fileID: 0}
+  m_RootGameObject: {fileID: 1196016473835546}
+  m_IsPrefabParent: 1
+--- !u!1 &1040626383296804
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 4199778724015872}
+  - component: {fileID: 212289423216126908}
+  m_Layer: 0
+  m_Name: Anchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!1 &1196016473835546
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 4277495823401034}
+  - component: {fileID: 114672256040595796}
+  - component: {fileID: 114483989905688274}
+  - component: {fileID: 114736220320285614}
+  m_Layer: 0
+  m_Name: GameBoard
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4199778724015872
+Transform:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1040626383296804}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 4277495823401034}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!4 &4277495823401034
+Transform:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1196016473835546}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.48, y: 2.23, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children:
+  - {fileID: 4199778724015872}
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &114483989905688274
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1196016473835546}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 66d725c987ba72042b28b2c13d5d27ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  DebugControls: {fileID: 0}
+  myGameBoard: {fileID: 114672256040595796}
+  myCharacter: {fileID: 114736220320285614}
+  playerSuffix: _1
+  LeftHorizontal: L_XAxis
+  LeftVertical: L_YAxis
+  RightHorizontal: R_XAxis
+  RightVertical: R_YAxis
+  DPadX: DPad_XAxis
+  DPadY: DPad_YAxis
+  ButtonX: X
+  ButtonA: A
+  ButtonB: B
+  ButtonY: Y
+  LeftBumper: LB
+  LeftTrigger: TriggersL
+  RightBumper: RB
+  RightTrigger: TriggersR
+  joythreshold: 0.8
+--- !u!114 &114672256040595796
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1196016473835546}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98d41203b64129941bfede11411f4436, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  myCharacter: {fileID: 114736220320285614}
+  Tile: {fileID: 1320624697317956, guid: 582bd60188a1edb4d8ee59554badb4a8, type: 2}
+  TileEater: {fileID: 1962310720618372, guid: a2bb6fe4c5a8c094faa9b398ae5beebc, type: 2}
+  AllTiles: []
+  tileSpawnRate: 1
+  spawnTime: 0
+  cooldownMax: 0.3
+  popCooldown: 0
+  bentChance: 0.5
+  boardWidth: 7
+  boardHeight: 13
+  tileWidth: 0.595
+  anchorX: 1.17
+  anchorY: 3.45
+  entryPoint: {fileID: 0}
+--- !u!114 &114736220320285614
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1196016473835546}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b705fe92a7139b541addfc80a1e11787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemy: {fileID: 0}
+  myGameBoard: {fileID: 114672256040595796}
+  myAI: {fileID: 0}
+  isAI: 0
+  isAlive: 0
+  attackStat: 5
+  defenceStat: 5
+  healthStat: 5
+  specialStat: 5
+  speedStat: 5
+  oneBarAtkScale: 1
+  twoBarAtkScale: 2
+  threeBarAtkScale: 4
+  defenceScale: 3
+  speedScale: 0.15
+  healthScale: 5
+  curHealth: 0
+  maxHealth: 30
+  fastDropOn: 0
+  tileDropRate: 0.9
+  fastTileDropRate: 0.5
+  dropTime: 0
+  healthSlider: {fileID: 0}
+  redSlider: {fileID: 0}
+  greenSlider: {fileID: 0}
+  blueSlider: {fileID: 0}
+  redCount: 0
+  redMax: 60
+  greenCount: 0
+  greenMax: 60
+  blueCount: 0
+  blueMax: 60
+  TextScore: {fileID: 0}
+--- !u!212 &212289423216126908
+SpriteRenderer:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1040626383296804}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_Materials:
+  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_SelectedEditorRenderState: 0
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_Sprite: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_FlipX: 0
+  m_FlipY: 0
+  m_DrawMode: 0
+  m_Size: {x: 1, y: 1}
+  m_AdaptiveModeThreshold: 0.5
+  m_SpriteTileMode: 0
+  m_WasSpriteAssigned: 0
+  m_MaskInteraction: 0

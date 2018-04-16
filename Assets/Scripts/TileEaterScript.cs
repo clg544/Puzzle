@@ -11,11 +11,11 @@ public class TileEaterScript : MonoBehaviour
     public Sprite YellowSprite;
     public SpriteRenderer mySprite;
 
-    public TileScript.TileState curState;
+    public TileState curState;
 
     public void Reset()
     {
-        setState(TileScript.TileState.EMPTY);
+        setState(TileState.EMPTY);
     }
 
     /* Destroy connected tiles */
@@ -24,34 +24,34 @@ public class TileEaterScript : MonoBehaviour
 
     }
 
-    public void setState(TileScript.TileState newState)
+    public void setState(TileState newState)
     {
         curState = newState;
         
         /* Do something on state change */
         switch (newState)
         {
-            case TileScript.TileState.RED:
+            case TileState.RED:
                 mySprite.sprite = RedSprite;
                 mySprite.color = Color.red;
                 break;
 
-            case TileScript.TileState.GREEN:
+            case TileState.GREEN:
                 mySprite.sprite = GreenSprite;
                 mySprite.color = Color.green;
                 break;
 
-            case TileScript.TileState.BLUE:
+            case TileState.BLUE:
                 mySprite.sprite = BlueSprite;
                 mySprite.color = Color.blue;
                 break;
 
-            case TileScript.TileState.YELLOW:
+            case TileState.YELLOW:
                 mySprite.sprite = YellowSprite;
                 mySprite.color = Color.yellow;
                 break;
 
-            case TileScript.TileState.EMPTY:
+            case TileState.EMPTY:
                 mySprite.sprite = EmptySprite;
                 mySprite.color = Color.white;
                 break;

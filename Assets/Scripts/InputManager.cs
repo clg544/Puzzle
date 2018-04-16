@@ -10,6 +10,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+
 
 public class InputManager : MonoBehaviour
 {
@@ -37,7 +39,9 @@ public class InputManager : MonoBehaviour
         public string RightTrigger;
     }
 
+    public GameObject DebugControls;
     public GameBoardScript myGameBoard;
+    public Character myCharacter;
     InputNames myInputNames;
 
     public string playerSuffix;
@@ -62,7 +66,9 @@ public class InputManager : MonoBehaviour
 
     public float joythreshold;
     private bool joyFlag_LeftX;
-    
+
+    bool dropping;
+
     public void KeyboardInput()
     {
         /* Player Input */
@@ -74,43 +80,77 @@ public class InputManager : MonoBehaviour
         {
             myGameBoard.MoveRight();
         }
-        if (Input.GetKeyDown(KeyCode.DownArrow))
+        if (Input.GetKeyDown(KeyCode.UpArrow))
         {
             myGameBoard.RotateTrominoRight();
         }
-        if (Input.GetKey(KeyCode.Space))
+        if (Input.GetKeyDown(KeyCode.DownArrow))
         {
-            if (myGameBoard.FallingTiles.Count == 0)
-                return;
-
-            if (myGameBoard.dropTime > myGameBoard.fastDropRate)
-                myGameBoard.DropAllTiles();
+            if (myGameBoard.FallingTiles.Count != 0)
+                myCharacter.fastDropOn = true;
+            
+        }
+        if (Input.GetKeyUp(KeyCode.DownArrow))
+        {
+            myCharacter.fastDropOn = false;
         }
         if (Input.GetKey(KeyCode.Keypad1))
         {
-            myGameBoard.PopTiles(TileScript.TileState.RED);
-            return;
+            myCharacter.PopBlue();
         }
         if (Input.GetKey(KeyCode.Keypad2))
         {
-            myGameBoard.PopTiles(TileScript.TileState.BLUE);
-            return;
+            myCharacter.PopGreen();
         }
         if (Input.GetKey(KeyCode.Keypad3))
         {
-            myGameBoard.PopTiles(TileScript.TileState.GREEN);
-            return;
+            myCharacter.PopRed();
         }
-        if (Input.GetKey(KeyCode.Keypad4))
+        if (Input.GetKey(KeyCode.A))
         {
-            myGameBoard.PopTiles(TileScript.TileState.YELLOW);
-            return;
+            myCharacter.Special();
         }
-        if (Input.GetKeyDown(KeyCode.P))
+        if (Input.GetKey(KeyCode.S))
         {
-            Debug.Break();
+            myCharacter.Heal();
+        }
+        if (Input.GetKey(KeyCode.D))
+        {
+            myCharacter.Attack();
         }
 
+
+        if (Debug.isDebugBuild)
+        {
+            if (Input.GetKeyDown(KeyCode.P))
+            {
+                Debug.Break();
+            }
+            if (Input.GetKeyDown(KeyCode.Q))
+            {
+                myCharacter.AddHealth(10);
+            }
+            if (Input.GetKeyDown(KeyCode.W))
+            {
+                myCharacter.AddBlue(10);
+            }
+            if (Input.GetKeyDown(KeyCode.E))
+            {
+                myCharacter.AddGreen(10);
+            }
+            if (Input.GetKeyDown(KeyCode.R))
+            {
+                myCharacter.AddRed(10);
+            }
+            if (Input.GetKeyDown(KeyCode.F1))
+            {
+                DebugControls.SetActive(true);
+            }
+            else if (Input.GetKeyUp(KeyCode.F1))
+            {
+                DebugControls.SetActive(false);
+            }
+        }
     }
     
     public void JoypadInput()
@@ -138,10 +178,15 @@ public class InputManager : MonoBehaviour
             myGameBoard.RotateTrominoRight();
         }
         
-        if (Mathf.Min(leftY, dPadY) < -(joythreshold))
+        if (Mathf.Min(leftY, dPadY) < -(joythreshold) && !dropping)
         {
-            if (myGameBoard.dropTime > myGameBoard.fastDropRate)
-                myGameBoard.DropAllTiles();
+            myCharacter.fastDropOn = true;
+            this.dropping = true;
+        }
+        if (Mathf.Min(leftY, dPadY) > -(joythreshold) && this.dropping)
+        {
+            myCharacter.fastDropOn = false;
+            this.dropping = false;
         }
 
         if(Mathf.Max(Mathf.Abs(leftX), Mathf.Abs(dPadX)) < .8f)
@@ -183,6 +228,7 @@ public class InputManager : MonoBehaviour
         myInputNames = SetUpInputNames(playerSuffix);
 
         joyFlag_LeftX = false;
+        dropping = false;
     }
 
 
