@@ -1389,6 +1389,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   boardWidth: 7
   boardHeight: 13
+  valueTableLocation: C:\Users\Clinton\Documents\GitRepo\Puzzle\Assets\AIWeightedValueTable.txt
 --- !u!114 &584912730 stripped
 MonoBehaviour:
   m_PrefabParentObject: {fileID: 114736220320285614, guid: 1fa56b1a70d77c042be933caf95f92b8,

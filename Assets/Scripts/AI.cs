@@ -20,6 +20,7 @@ public class AI : MonoBehaviour
     StateNode root270;
 
     // Value table for reference
+    public string valueTableLocation;
     public int[,] emptyValueTable;
 
     // enum abstracting move options
@@ -1050,9 +1051,87 @@ public class AI : MonoBehaviour
         return newNode;
     }
 
+    /**
+     * 
+     */
+    private int ScientificPower(int i, int e)
+    {
+        if(e == 0)
+        {
+            return i;
+        }
+
+        while (e > 0)
+        {
+            i *= 10;
+            e -= 1;
+        }
+
+        return i;
+    }
+    public int[,] BuildWeightTable(int height, int width, string input)
+    {
+        // Declare Variables
+        int[,] output = new int[width, height];
+        int numStart = 0, numEnd = 0, diff = 0;
+        int curInt = 0, curIndex = 0;
+        bool foundNumber = false;
+
+        // For all chars in the stream...
+        for(int i = 0; i < input.Length; i++)
+        {
+            // If we found a numbew, move end to encapsulate it
+            if (char.IsDigit(input[i]))
+            {
+                numEnd++;
+                foundNumber = true;
+            }
+            // If we found extra whitespace, ignore it
+            else if (char.IsWhiteSpace(input[i]) && !foundNumber)
+            {
+                numEnd++;
+                numStart = numEnd;
+            }
+            // If we found the end of a number, set the value in the index
+            else
+            {
+                // end index - start index = length of int
+                diff = numEnd - numStart;
+                curInt = 0;
+
+                // apply string to int conversion, one digit at a time
+                while (diff > 0)
+                {
+                    curInt += ScientificPower((int)char.GetNumericValue(input[numStart]), diff - 1);
+
+                    diff--;
+                    numStart++;
+                }
+
+                // Increment over the string
+                numStart++;
+                numEnd++;
+
+                // Set the index increment over array
+                if (curIndex == height * width)
+                    break;
+                
+                // Set the index's value
+                output[curIndex / height, curIndex % height] = curInt;
+                curIndex++;
+
+                // Reset context flag 
+                foundNumber = false;
+            }
+        }
+        
+        return output;
+    }
+
+
     #region Test Code
 
-    public void PrintBoardStates(StateNode board)
+public void PrintBoardStates(StateNode board)
     {
         string s = "";
 
@@ -2503,8 +2582,23 @@ public class AI : MonoBehaviour
 
         root = BuildGameState();
 
-        emptyValueTable = new int[boardWidth, boardHeight];
-        BuildEmptyValueTable();
+        string myValueData = System.IO.File.ReadAllText(valueTableLocation);
+        print(myValueData);
+        emptyValueTable = BuildWeightTable(boardHeight, boardWidth, myValueData);
+
+
+        string asdf = "";
+        for(int i = 0; i < 91; i++)
+        {
+            asdf += emptyValueTable[i / 13, i % 13] + " ";
+            if(i % 7 == 6)
+            {
+                asdf += '\n';
+            }
+        }
+        print(asdf);
+
+        Debug.Break();
     }
 
     // Update is called once per frame
