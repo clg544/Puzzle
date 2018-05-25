@@ -5,10 +5,15 @@ using System;
 
 public class Character : MonoBehaviour
 {
+    public const int RED_MULTIPLIER = 3;
+    public const int GREEN_MULTIPLIER = 2;
+    public const int BLUE_MULTIPLIER = 1;
+    
     // Game State Holders
     public Character enemy;
     public GameBoardScript myGameBoard;
-    public AI myAI;
+    public PuzzleAI myPuzzleAI;
+    public BattleAI myBattleAI;
     public bool isAI;
     public bool isAlive;
 
@@ -56,6 +61,9 @@ public class Character : MonoBehaviour
     public Slider blueSlider;
 
     // Values to calculate resource values 
+    //public int energyCount;
+    //public int energyMax;
+
     public int redCount;
     public int redMax;
     public int greenCount;
@@ -187,7 +195,9 @@ public class Character : MonoBehaviour
     }
     public void AddBlue(int amt)
     {
-        blueCount += amt;
+        Debug.Log(StackTraceUtility.ExtractStackTrace());
+
+        blueCount += amt * BLUE_MULTIPLIER;
 
         if (blueCount > blueMax)
             blueCount = blueMax;
@@ -196,19 +206,19 @@ public class Character : MonoBehaviour
     }
     public void AddGreen(int amt)
     {
-        greenCount += amt;
-
-        if (greenCount > greenMax)
-            greenCount = greenMax;
+        blueCount += amt * GREEN_MULTIPLIER;
+        
+        if (blueCount > blueMax)
+            blueCount = blueMax;
 
         return;
     }
     public void AddRed(int amt)
     {
-        redCount += amt;
+        blueCount += amt * RED_MULTIPLIER;
 
-        if (redCount > redMax)
-            redCount = redMax;
+        if (blueCount > blueMax)
+            blueCount = blueMax;
 
         return;
     }
@@ -223,8 +233,8 @@ public class Character : MonoBehaviour
     
     public void PopRed()
     {
-        myGameBoard.PopTiles(TileState.RED);
-
+        redCount += myGameBoard.PopTiles(TileState.RED);
+        
         if (redCount > redMax)
             redCount = redMax;
 
@@ -232,8 +242,8 @@ public class Character : MonoBehaviour
     }
     public void PopGreen()
     {
-        myGameBoard.PopTiles(TileState.GREEN);
-
+        greenCount += myGameBoard.PopTiles(TileState.GREEN);
+        
         if (greenCount > greenMax)
             greenCount = greenMax;
 
@@ -241,8 +251,8 @@ public class Character : MonoBehaviour
     }
     public void PopBlue()
     {
-        myGameBoard.PopTiles(TileState.BLUE);
-
+        blueCount += myGameBoard.PopTiles(TileState.BLUE);
+        
         if (blueCount > blueMax)
             blueCount = blueMax;
 
@@ -285,25 +295,33 @@ public class Character : MonoBehaviour
 
     #region UnityFunctions
 
-    // Setup all of the decision trees
+    public void Awake()
+    {
+        if (isAI)
+        {
+            myPuzzleAI = GetComponent<PuzzleAI>();
+            myBattleAI = GetComponent<BattleAI>();
+        }
+        else
+        {
+            myPuzzleAI = null;
+            myBattleAI = null;
+        }
+    }
+
+    
     public void Start()
     {
-        // Set universal static values
-        redSlider.value = 0;
-        greenSlider.value = 0;
-        blueSlider.value = 0;
-
+        // Set initial values
         redCount = 0;
         greenCount = 0;
         blueCount = 0;
-
         curHealth = maxHealth;
 
         healthSlider.value = (float)curHealth / (float)maxHealth;
-
-        redSlider.value = (float)redCount / (float)redMax;
-        greenSlider.value = (float)greenCount / (float)greenMax;
-        blueSlider.value = (float)blueCount / (float)blueMax;
+        redSlider.value = redCount / (float)redMax;
+        greenSlider.value = greenCount / (float)greenMax;
+        blueSlider.value = blueCount / (float)blueMax;
     }
 
 
@@ -313,8 +331,6 @@ public class Character : MonoBehaviour
 
         if(dropTime > tileDropRate && !fastDropOn)
         {
-            print(dropTime);
-
             dropTime = 0;
             myGameBoard.DropAllTiles();
         }
@@ -324,11 +340,10 @@ public class Character : MonoBehaviour
             myGameBoard.DropAllTiles();
         }
 
-        healthSlider.value = (float)curHealth / (float)maxHealth;
-
-        redSlider.value = (float)redCount / (float)redMax;
-        greenSlider.value = (float)greenCount / (float)greenMax;
-        blueSlider.value = (float)blueCount / (float)blueMax;
+        healthSlider.value = curHealth / (float)maxHealth;
+        redSlider.value = redCount / (float)redMax;
+        greenSlider.value = greenCount / (float)greenMax;
+        blueSlider.value = blueCount / (float)blueMax;
     }
 
     #endregion UnityFunctions
@@ -565,7 +580,7 @@ public class Character : MonoBehaviour
 
         if (defender.curHealth != 10)
             results += "Fail, " + defender.curHealth + ", expected 10";
-        else if (attacker.greenCount != 0)
+        else if (attacker.redCount != 0)
             results += "Fail, redCount != 0";
         else
             results += "Pass";
@@ -600,7 +615,7 @@ public class Character : MonoBehaviour
 
         if (defender.curHealth != 100)
             results += "Fail, " + defender.curHealth + ", expected 100";
-        else if (attacker.greenCount != 0)
+        else if (attacker.redCount != 0)
             results += "Fail, redCount != 0";
         else
             results += "Pass";

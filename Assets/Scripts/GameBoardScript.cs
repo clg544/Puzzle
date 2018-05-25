@@ -3,6 +3,15 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+
+public struct BoolSquare
+{
+    public int x;
+    public int y;
+    public int width;
+    public int height;
+}
+
 public class GameBoardScript : MonoBehaviour
 {
     public Character myCharacter;
@@ -62,6 +71,171 @@ public class GameBoardScript : MonoBehaviour
         }
         TempTiles.Clear();    // Clean up after ourselves!
     }
+
+
+    public LinkedList<BoolSquare> ApproximateRectangles(bool[,] arr)
+    {
+        // Lists to track square data
+        LinkedList<int[]> RightWall, TopWall, Temp;
+        LinkedList<BoolSquare> squareList = new LinkedList<BoolSquare>();
+
+        // Array to track what's been looked at, init to all false
+        bool[,] visited = new bool[boardWidth, boardHeight];
+
+        for (int i = 0; i < boardWidth * boardHeight; i++)
+        {
+            visited[i % boardWidth, i / boardWidth] = false;
+        }
+
+        // For each point excluding right and top edges...
+        for (int y = 0; y < boardHeight - 1; y++)
+        {
+            for (int x = 0; x < boardWidth - 1; x++)
+            {
+                // Flush Lists
+                RightWall = new LinkedList<int[]>();
+                TopWall = new LinkedList<int[]>();
+                Temp = new LinkedList<int[]>();
+
+                // Minimum square candidate must be a 2x2 & unvisited
+                bool candidate = arr[x, y] && !(visited[x, y]);
+                visited[x, y] = true;
+                if (candidate)
+                {
+                    // Test that all are marked to count, and none are visited
+                    candidate = candidate &&
+                        (arr[x + 1, y] && arr[x, y + 1] && arr[x + 1, y + 1]) &&
+                        (!visited[x + 1, y] && !visited[x, y + 1] && !visited[x + 1, y + 1]);
+                }
+
+                // If candidate is true, we've established a 2x2 square
+                if (candidate)
+                {
+                    // Define loop state variables
+                    bool canGrowRight = true;
+                    bool canGrowUp = true;
+                    int[] corner = new int[2];
+
+                    // Create Square Data
+                    BoolSquare curSquare = new BoolSquare();
+                    curSquare.x = x;
+                    curSquare.y = y;
+                    curSquare.width = 2;
+                    curSquare.height = 2;
+
+                    // Mark as visited
+                    visited[x + 1, y] = true;
+                    visited[x, y + 1] = true;
+                    visited[x + 1, y + 1] = true;
+
+                    // Populate lists for the initial loop
+                    RightWall.AddFirst(new int[2] { x + curSquare.width, y });
+                    RightWall.AddFirst(new int[2] { x + curSquare.width, y + 1 });
+
+                    TopWall.AddFirst(new int[2] { x, y + curSquare.height });
+                    TopWall.AddFirst(new int[2] { x + 1, y + curSquare.height });
+
+                    // If our square is at the edge, pre-set the flag
+                    if (x + curSquare.width >= boardWidth)
+                        canGrowRight = false;
+                    if (y + curSquare.height >= boardHeight)
+                        canGrowUp = false;
+
+                    // Outside corner of the square
+                    corner = new int[2] { x + curSquare.width, y + curSquare.height };
+
+                    if (x == 5 && y == 4) print("Hit!");
+                    while (canGrowRight || canGrowUp)
+                    {
+                        // Add one column to the side if possible
+                        // Each point in RightWall must be TRUE to add the column
+                        foreach (int[] point in RightWall)
+                        {
+                            if(point[0] >= boardWidth)
+                            {
+                                canGrowRight = false;
+                            }
+
+                            canGrowRight = canGrowRight && arr[point[0], point[1]];
+                        }
+
+                        // If true, the column can be added
+                        if (canGrowRight)
+                        {
+
+                            // With the new column, the previous corner joins topwall
+                            if (corner[0] < boardWidth)
+                                TopWall.AddFirst(new int[2] { corner[0], corner[1] });
+
+                            // The new corner moves one to the right
+                            corner = new int[2] { corner[0] + 1, corner[1] };
+
+                            // Set each point as visited, and add right neighbor to temp list
+                            foreach (int[] point in RightWall)
+                            {
+                                visited[point[0], point[1]] = true;
+
+                                if (point[0] + 1 < boardWidth)
+                                    Temp.AddFirst(new int[2] { point[0] + 1, point[1] });
+                                else
+                                    canGrowRight = false;
+                            }
+
+                            // Swap RightWall with temp, and increment the width 
+                            RightWall = Temp;
+                            Temp = new LinkedList<int[]>();
+                            curSquare.width++;
+                        }
+
+                        // Add 1 Row to the top if possible
+                        // Each point in TopWall must be TRUE
+                        foreach (int[] point in TopWall)
+                        {
+                            if (point[1] >= boardHeight)
+                            {
+                                canGrowUp = false;
+                            } 
+
+                            canGrowUp = canGrowUp && arr[point[0], point[1]];
+                        }
+
+                        // If true, the column can be added
+                        if (canGrowUp)
+                        {
+                            // With the new row, the previous corner joins RightWall
+                            if (corner[1] < boardHeight)
+                                RightWall.AddFirst(new int[2] { corner[0], corner[1] });
+
+                            // The new corner is one above the previous
+                            corner = new int[2] { corner[0], corner[1] + 1 };
+
+                            // Set each point to visited, and add the north-neighbor to a temp list
+                            foreach (int[] point in TopWall)
+                            {
+                                visited[point[0], point[1]] = true;
+
+                                if (point[1] + 1 < boardHeight)
+                                    Temp.AddFirst(new int[2] { point[0], point[1] + 1 });
+                                else
+                                    canGrowUp = false;
+                            }
+
+                            // Swap TopWall and Temp, then increment curHeight
+                            TopWall = Temp;
+                            Temp = new LinkedList<int[]>();
+                            curSquare.height++;
+                        }
+                    }
+
+                    // Add the side lengths to our list
+                    squareList.AddFirst(curSquare);
+                }
+            }
+        }
+
+        return squareList;
+    }
+
 
     // Move a tile from one position to another
     public void Relocate(TileScript from, TileScript to)
@@ -424,27 +598,59 @@ public class GameBoardScript : MonoBehaviour
         return 0;
     }
 
-    public int ScoreList(IList<TileScript> tileList)
+
+    public int ScoreBoolSquareList(LinkedList<BoolSquare> squareList)
+    {
+        if(squareList.Count == 0)
+            return 0;
+
+        float score = 0.0F;
+        foreach (BoolSquare square in squareList)
+        {
+            score = Mathf.Min(square.width / (float)square.height, (float)square.height / square.width);
+            score += 1;
+
+            score += square.height * square.width * score;
+        }
+        
+        return Mathf.FloorToInt(score);
+    }
+    
+
+    public int ScoreTileList(IList<TileScript> tileList)
     {
         int score = 0;
+        bool[,] hitArray = new bool[boardWidth, boardHeight];
 
-        foreach(TileScript tile in tileList)
+        for(int i = 0; i < boardWidth*boardHeight; i++)
         {
-            score += MatchFlagValue(tile.matchFlag);
+            hitArray[i % boardWidth, i / boardWidth] = false;
+        }
+
+        foreach (TileScript tile in tileList)
+        {
+            score += 1;
+            
+            hitArray[tile.x_coor, tile.y_coor] = true;
 
             tile.Reset();
         }
+
+        LinkedList<BoolSquare> squareList = ApproximateRectangles(hitArray);
         
-        return score;
+        return score + ScoreBoolSquareList(squareList);
     }
 
-    public void PopTiles(TileState hitState)
-    {
-        if (popCooldown < cooldownMax)
-            return;
-        else
-            popCooldown = 0;
 
+    /**
+     * int PopTiles(TileState hitState)
+     * 
+     * Find all tiles of the given tile state, remove them, and return the score generated
+     *      by the combo.
+     */
+    public int PopTiles(TileState hitState)
+    {
+        int score = 0;
         LinkedList<TileScript> TilesToCheck = new LinkedList<TileScript>();
 
         /* For all tiles at (x, 0) */
@@ -508,19 +714,7 @@ public class GameBoardScript : MonoBehaviour
             curNode = curNode.Next;
         }
 
-        // Add the score to the right counter
-        switch (hitState)
-        {
-            case TileState.RED:
-                myCharacter.redCount += ScoreList(KillTiles.Values);
-                break;
-            case TileState.GREEN:
-                myCharacter.greenCount += ScoreList(KillTiles.Values);
-                break;
-            case TileState.BLUE:
-                myCharacter.blueCount += ScoreList(KillTiles.Values);
-                break;
-        }
+        score += ScoreTileList(KillTiles.Values); 
 
         foreach (TileScript tile in BoardTileScripts)
         {
@@ -549,9 +743,32 @@ public class GameBoardScript : MonoBehaviour
             }
         }
 
+        bool[,] hitGrid = new bool[boardWidth, boardHeight];
+        LinkedList<BoolSquare> SquareList;
+
+        for(int i = 0; i < boardWidth * boardHeight; i++)
+        {
+            hitGrid[i % boardWidth, i / boardWidth] = false;
+        }
+        foreach(TileScript ts in KillTiles.Values)
+        {
+            hitGrid[ts.x_coor, ts.y_coor] = true;
+        }
+
+        SquareList = ApproximateRectangles(hitGrid);
+        
+        foreach(BoolSquare square in SquareList)
+        {
+            score += square.width * square.height * 5;
+        }
+
         TilesToCheck.Clear();
         KillTiles.Clear();
+
+        return score;
     }
+
+
 
 
     public void MakeNewFallingTiles()
@@ -686,6 +903,8 @@ public class GameBoardScript : MonoBehaviour
 
     void Awake()
     {
+        myCharacter = GetComponent<Character>();
+
         FallingTiles = new SortedList<int, TileScript>();
         ActiveTiles = new SortedList<int, TileScript>();
         TempTiles = new LinkedList<TileScript>();
@@ -799,9 +1018,8 @@ public class GameBoardScript : MonoBehaviour
         SpawnArea[2, 0].TileLeft = SpawnArea[1, 0];
 
         MoveGameBoard(new Vector3(anchorX, anchorY, 0));
-
     }
-    
+
     void Update()
     {
         if (FallingTiles.Count == 0)

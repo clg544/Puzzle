@@ -12,26 +12,30 @@ public enum TileState
 }
 
 public class TileScript : MonoBehaviour {
+
     public GameBoardScript TileManager;
     public TileScript TileBelow;
     public TileScript TileAbove;
     public TileScript TileLeft;
     public TileScript TileRight;
 
-    public const int leftMatch  = 0x1;
-    public const int aboveMatch = 0x2;
-    public const int rightMatch = 0x4;
-    public const int belowMatch = 0x8;
-    public int matchFlag;
-        
     public Sprite[] spriteSheet;
     public SpriteRenderer mySprite;
-    
+
     // ID info
     public int tileID;
     public int x_coor;
     public int y_coor;
 
+    public const int leftMatch  = 0x1;
+    public const int aboveMatch = 0x2;
+    public const int rightMatch = 0x4;
+    public const int belowMatch = 0x8;
+    public int matchFlag;
+
+    public int connectionWidth;
+    public int connectionHeight;
+    
     // Game State info
     public TileState curState;
     public bool isActive = false;       // Is this in player control?

@@ -38,6 +38,8 @@ GameObject:
   - component: {fileID: 114672256040595796}
   - component: {fileID: 114483989905688274}
   - component: {fileID: 114736220320285614}
+  - component: {fileID: 114180874008989020}
+  - component: {fileID: 114670991752352450}
   m_Layer: 0
   m_Name: GameBoard
   m_TagString: Untagged
@@ -72,6 +74,20 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &114180874008989020
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1196016473835546}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 853e934731f079f469b83b3cea649cf6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  boardWidth: 7
+  boardHeight: 13
+  valueTableLocation: C:\Users\Clinton\Documents\GitRepo\Puzzle\Assets\AIWeightedValueTable.txt
 --- !u!114 &114483989905688274
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -102,6 +118,30 @@ MonoBehaviour:
   RightBumper: RB
   RightTrigger: TriggersR
   joythreshold: 0.8
+--- !u!114 &114670991752352450
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1196016473835546}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5db94393c375024fbdce33a4fe863ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  myCharacter: {fileID: 0}
+  myPuzzleAI: {fileID: 0}
+  myEnemy: {fileID: 0}
+  moveTimer: 0
+  moveTick: 0.5
+  curRedValue: 0
+  curGreenValue: 0
+  curBlueValue: 0
+  fear: 0
+  patience: 0
+  hoarder: 0
+  ignorant: 0
+  haste: 0
 --- !u!114 &114672256040595796
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -141,7 +181,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemy: {fileID: 0}
   myGameBoard: {fileID: 114672256040595796}
-  myAI: {fileID: 0}
+  myPuzzleAI: {fileID: 0}
+  myBattleAI: {fileID: 0}
   isAI: 0
   isAlive: 0
   attackStat: 5
@@ -158,19 +199,13 @@ MonoBehaviour:
   curHealth: 0
   maxHealth: 30
   fastDropOn: 0
-  tileDropRate: 0.9
-  fastTileDropRate: 0.5
+  tileDropRate: 0.5
+  fastTileDropRate: 0.1
   dropTime: 0
   healthSlider: {fileID: 0}
-  redSlider: {fileID: 0}
-  greenSlider: {fileID: 0}
-  blueSlider: {fileID: 0}
-  redCount: 0
-  redMax: 60
-  greenCount: 0
-  greenMax: 60
-  blueCount: 0
-  blueMax: 60
+  energySlider: {fileID: 0}
+  energyCount: 0
+  energyMax: 200
   TextScore: {fileID: 0}
 --- !u!212 &212289423216126908
 SpriteRenderer:

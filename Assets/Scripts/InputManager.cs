@@ -96,7 +96,7 @@ public class InputManager : MonoBehaviour
         }
         if (Input.GetKey(KeyCode.Keypad1))
         {
-            myCharacter.PopBlue();
+            myCharacter.PopRed();
         }
         if (Input.GetKey(KeyCode.Keypad2))
         {
@@ -104,7 +104,7 @@ public class InputManager : MonoBehaviour
         }
         if (Input.GetKey(KeyCode.Keypad3))
         {
-            myCharacter.PopRed();
+            myCharacter.PopBlue();
         }
         if (Input.GetKey(KeyCode.A))
         {
@@ -132,7 +132,7 @@ public class InputManager : MonoBehaviour
             }
             if (Input.GetKeyDown(KeyCode.W))
             {
-                myCharacter.AddBlue(10);
+                myCharacter.AddRed(10);
             }
             if (Input.GetKeyDown(KeyCode.E))
             {
@@ -140,7 +140,7 @@ public class InputManager : MonoBehaviour
             }
             if (Input.GetKeyDown(KeyCode.R))
             {
-                myCharacter.AddRed(10);
+                myCharacter.AddBlue(10);
             }
             if (Input.GetKeyDown(KeyCode.F1))
             {
